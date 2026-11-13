@@ -1,7 +1,7 @@
 
-// Service worker do Simulador de Pedidos. Versao: 06_2026.11-8aec122c
+// Service worker do Simulador de Pedidos. Versao: 07_2026.11-655ce8aa
 // Guarda o app no aparelho (funciona offline) e troca pela versao nova assim que ela e publicada.
-var CACHE = "simulador-06_2026.11-8aec122c";
+var CACHE = "simulador-07_2026.11-655ce8aa";
 var ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", function(e){
   // cache:"reload" ignora o cache HTTP do navegador/GitHub Pages: garante que a versao nova entre de verdade
