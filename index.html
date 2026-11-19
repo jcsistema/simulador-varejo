@@ -218,7 +218,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
   <div class="tot">
     <div><div class="l">Total Volume (fardos)</div><div class="big" id="tFd">0</div></div>
     <div><div class="l">Total da NF</div><div class="big" id="tSem">R$ 0,00</div></div>
-    <div><div class="l">Desconto Geral (<span id="tPct">0,0%</span>)</div><div class="big" id="tDesc">R$ 0,00</div></div>
+    <div><div class="l">Desconto Geral (<span id="tDesc">R$ 0,00</span>)</div><div class="big" id="tPct">0,0%</div></div>
     <div><div class="l">Total com descontos</div><div class="big" id="tCom">R$ 0,00</div></div>
   </div>
   <div class="avverba" id="vAviso" hidden role="alert">⚠ Você está utilizando uma verba maior do que gerou até o momento (<span id="vExc">R$ 0,00</span> a mais). Você precisa aumentar a verba gerada para poder fechar o pedido.</div>
@@ -232,6 +232,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
     <button class="lk" id="bCopiar" type="button">Copiar texto</button>
     <button class="lk" id="bHist" type="button">Pedidos salvos (<span id="nHist">0</span>)</button>
     <button class="lk" id="bLimpar" type="button">Novo pedido</button>
+    <button class="lk" id="bRecup" type="button" hidden>Recuperar simulação (<span id="hRecup"></span>)</button>
   </div>
 </div></div>
 
@@ -359,6 +360,7 @@ function montaLista(){
     info.appendChild(el("div","meta",linha));
     var simL = el("div","siml"); info.appendChild(simL);
     var avI = el("div","avitem"); info.appendChild(avI);
+    var gv = el("div","siml"); info.appendChild(gv);
     var sub = el("div","sub"); info.appendChild(sub);
     // campo "desconto desejado": o representante escolhe % ou R$ (preco por fardo)
     var sr = el("div","simr");
@@ -375,7 +377,7 @@ function montaLista(){
     var bp = el("button",null,"+"); bp.type="button"; bp.setAttribute("aria-label","Aumentar "+p.d);
     q.appendChild(bm); q.appendChild(inp); q.appendChild(bp);
     w.appendChild(info); w.appendChild(q); box.appendChild(w);
-    rows[cod] = {w:w, inp:inp, sub:sub, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, modo:(sim[cod] ? sim[cod].m : "p")};
+    rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, modo:(sim[cod] ? sim[cod].m : "p")};
     function leNum(txt){ var v = parseFloat(String(txt).replace(/\./g,"").replace(",",".")); return isNaN(v) ? null : v; }
     function fmtNum(v, casas){ return v.toFixed(casas).replace(".",","); }
     function aplicaSim(){
@@ -427,6 +429,7 @@ function atualizaLinha(cod){
   r.bP.className = r.modo==="p" ? "at" : ""; r.bR.className = r.modo==="r" ? "at" : "";
   r.si.placeholder = r.modo==="p" ? "%" : "R$/fardo";
   r.simL.textContent = (q>0 && sim[cod]) ? "Simulação com verba de "+pct(c1.s)+": "+money(c1.J)+"/fardo"+(c1.K!==null ? " ("+money(c1.K)+" por pacote)" : "") : "";
+  r.gv.textContent = q>0 ? "Verba gerada: "+pct(c1.g)+" · "+money(calc(cod,r.it[1],r.it[2],q).gera) : "";
   r.sub.textContent = q>0 ? q+" × "+money(c1.J)+" = "+money(calc(cod,r.it[1],r.it[2],q).com) : "";
 }
 function aplicaFiltro(){
@@ -828,7 +831,7 @@ function novoPedido(){
   qty = {}; sim = {}; modoCli = ""; ["cod","cli","grupo","prazo","busca","filtro"].forEach(function(i){ $(i).value=""; });
   travaCampos(true); $("hCli").textContent = 'Escolha o cliente na lista. Se ele não for cadastrado, escreva apenas a palavra "Novo".';
   $("tab").value = tabelaPadrao(); $("avTab").hidden = true; trocaTabela($("tab").value,false); salvaRascunho();
-  window.scrollTo(0,0); msg("Novo pedido iniciado.","ok");
+  pintaRecuperar(); window.scrollTo(0,0); msg("Novo pedido iniciado.","ok");
 }
 
 /* ---------- inicio ---------- */
@@ -859,9 +862,31 @@ function init(){
   $("bZap").addEventListener("click", enviar);
   $("bApr").addEventListener("click", enviarAprovacao);
   $("bSalvar").addEventListener("click", salvar);
+  $("bRecup").addEventListener("click", recuperaAuto);
+  pintaRecuperar(); setInterval(autoSalva, AUTO_MS);
   $("bCopiar").addEventListener("click", copiar);
   $("bLimpar").addEventListener("click", function(){ if(Object.keys(qty).length && !confirmaLimpar()) return; novoPedido(); });
   $("bHist").addEventListener("click", function(){ var s=$("salvos"); s.hidden=!s.hidden; if(!s.hidden) s.scrollIntoView({behavior:"smooth"}); });
+}
+/* ---------- copia automatica da simulacao a cada 5 minutos ---------- */
+var AUTO_MS = 5*60*1000;
+function copiaAuto(){ return lsJson(K.a, null); }
+function pintaRecuperar(){
+  var a = copiaAuto(), b = $("bRecup"), tem = !!(a && a.qty && Object.keys(a.qty).length && a.s !== assinatura());
+  b.hidden = !tem; if(tem) $("hRecup").textContent = a.dt+" "+a.h;
+}
+function autoSalva(){
+  if(!Object.keys(qty).length) return;
+  salvaRascunho();
+  var s = assinatura(), a = copiaAuto(); if(a && a.s === s) return;
+  var d = lsJson(K.d, null), g = agora(); if(!d) return;
+  d.s = s; d.h = g.h; d.dt = g.d; lsSet(K.a, JSON.stringify(d));
+  pintaRecuperar(); msg("Simulação salva automaticamente às "+g.h+".","ok");
+}
+function recuperaAuto(){
+  var a = copiaAuto(); if(!a) return;
+  carregaRascunho(a); ajustaSelectTabela(); pintaTotais(); salvaRascunho(); pintaRecuperar();
+  window.scrollTo(0,0); msg("Simulação das "+a.h+" recuperada.","ok");
 }
 var pedeLimpar = 0;
 function confirmaLimpar(){           // sem janela de alerta: toca duas vezes em 4s
@@ -887,7 +912,7 @@ var SESS = "sim_sessao_v2";
 function entra(dados, user, pwd, manter){
   D = dados;
   var c = "_"+String(D.rep.cod).replace(/\W/g,"");
-  K = {h:"sim_hist_v1"+c, d:"sim_draft_v1"+c, z:"sim_zap_v1"+c};
+  K = {h:"sim_hist_v1"+c, d:"sim_draft_v1"+c, z:"sim_zap_v1"+c, a:"sim_auto_v1"+c};
   if(manter) lsSet(SESS, JSON.stringify({u:user, p:pwd})); else { mem[SESS]=""; try{ localStorage.removeItem(SESS); }catch(e){} }
   $("login").hidden = true; $("app").hidden = false;
   init();
