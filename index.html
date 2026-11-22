@@ -82,6 +82,8 @@ input:focus,select:focus,button:focus-visible{outline:3px solid var(--pri);outli
 .campo .volta{min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--pri);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
 .campo .volta[hidden]{display:none}
 .campo .seg{flex:none}
+.dsim{font-size:13px;line-height:1.4;color:var(--pri);background:var(--pri-bg);border-radius:10px;padding:8px 10px;margin-top:8px}
+.dsim[hidden]{display:none}
 .nota{font-size:13px;font-weight:600;color:var(--warn);margin-top:8px}
 .nota:empty,.avitem:empty{display:none}
 .sub{display:flex;justify-content:flex-end;align-items:baseline;gap:10px;margin-top:10px;font-size:13px;color:var(--mut);font-weight:600}
@@ -461,6 +463,10 @@ function montaLista(){
     seg.appendChild(bP); seg.appendChild(bR); sLin.appendChild(seg);
     var si = el("input"); si.type="text"; si.setAttribute("inputmode","decimal"); si.setAttribute("aria-label","Desconto ou preço desejado de "+p.d);
     sLin.appendChild(si); campos.appendChild(sr);
+    var dS = el("div","dsim"); dS.hidden = true;
+    dS.appendChild(el("b",null,"ⓘ Só para simulação: "));
+    dS.appendChild(document.createTextNode("este valor não é o preço unitário da NF. Ele mostra ao cliente o preço final por fardo; na nota, o produto sai pelo Preço NF e o desconto entra no percentual do Desconto Geral."));
+    painel.appendChild(dS);
     var pl = el("div","nota"); painel.appendChild(pl);
     var avI = el("div","avitem"); painel.appendChild(avI);
     var sub = el("div","sub"); painel.appendChild(sub);
@@ -470,7 +476,7 @@ function montaLista(){
     var bp = el("button",null,"+"); bp.type="button"; bp.setAttribute("aria-label","Aumentar "+p.d);
     q.appendChild(bm); q.appendChild(inp); q.appendChild(bp);
     w.appendChild(info); w.appendChild(q); w.appendChild(painel); box.appendChild(w);
-    rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, pi:pi, pl:pl, bPv:bPv, modo:(sim[cod] ? sim[cod].m : "p")};
+    rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, pi:pi, pl:pl, bPv:bPv, dS:dS, modo:(sim[cod] ? sim[cod].m : "p")};
     function leNum(txt){ var v = parseFloat(String(txt).replace(/\./g,"").replace(",",".")); return isNaN(v) ? null : v; }
     function fmtNum(v, casas){ return v.toFixed(casas).replace(".",","); }
     function aplicaPreco(final){
@@ -534,7 +540,8 @@ function montaLista(){
       if(i>=0) d = d.slice(0,i+1) + d.slice(i+1).replace(/,/g,"").slice(0,2);   // uma virgula so, ate 2 casas
       d = d.slice(0,9); if(si.value!==d) si.value = d; aplicaSim();
     });
-    si.addEventListener("focus", function(){ try{ si.select(); }catch(e){} });
+    si.addEventListener("focus", function(){ try{ si.select(); }catch(e){} if(qty[cod]) dS.hidden = false; });
+    si.addEventListener("blur", function(){ atualizaLinha(cod); });
     if(sim[cod]) si.value = sim[cod].m==="r" ? fmtNum(sim[cod].v,2) : String(sim[cod].v).replace(".",",");
     function set(v){ v = Math.max(0, Math.min(99999, parseInt(v,10)||0)); if(v>0) qty[cod]=v; else { delete qty[cod]; delete sim[cod]; si.value=""; delete pn[cod]; delete autNF[cod]; pi.value=""; } atualizaLinha(cod); pintaTotais(); salvaRascunho(); }
     bm.addEventListener("click", function(){ set((qty[cod]||0)-1); });
@@ -559,6 +566,7 @@ function atualizaLinha(cod){
   r.simL.textContent = (q>0 && sim[cod]) ? "Simulação com verba de "+pct(c1.s)+": "+money(c1.J)+"/fardo"+(c1.K!==null ? " ("+money(c1.K)+" por pacote)" : "") : "";
   r.gv.textContent = q>0 ? "Verba gerada: "+(c1.alt ? "" : pct(c1.g)+" · ")+money(calc(cod,r.it[1],r.it[2],q).gera) : "";
   r.bPv.hidden = !c1.alt;
+  r.dS.hidden = !(q>0 && (sim[cod] || document.activeElement===r.si));
   r.sub.textContent = "";
   if(q>0){ r.sub.appendChild(el("span","rot",q+" × "+money(c1.J))); r.sub.appendChild(el("b",null,money(calc(cod,r.it[1],r.it[2],q).com))); }
 }
