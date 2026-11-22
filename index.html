@@ -139,7 +139,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
 .vazio{color:var(--mut);padding:14px 0;text-align:center}
 @media (max-width:520px){.item{grid-template-columns:1fr}.qty{justify-content:flex-end}
   .qty::before{content:"Fardos";margin-right:auto;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.02em}
-  .campos{grid-template-columns:1fr}.campo{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px}.campo .rot{margin:0}}
+  .campos{grid-template-columns:1fr}.campo{display:grid;grid-template-columns:108px 1fr;align-items:center;gap:8px}.campo .rot{margin:0}}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 #login{max-width:420px;margin:0 auto;padding:28px 16px}
 #login .card{padding:18px}
@@ -149,6 +149,18 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
 .sair{background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
 #inst{position:fixed;inset:0;z-index:20;background:rgba(10,20,30,.62);display:flex;align-items:center;justify-content:center;padding:20px}
 #inst[hidden]{display:none}
+#pnf{position:fixed;inset:0;z-index:30;background:rgba(10,20,30,.62);display:flex;align-items:center;justify-content:center;padding:20px}
+#pnf[hidden]{display:none}
+#pnf .cx{background:var(--card);color:var(--ink);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);border-top:5px solid var(--warn)}
+#pnf h2{font-size:19px;margin:0 0 6px;color:var(--warn)}
+#pnf .nm{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--mut)}
+#pnf .nm[hidden]{display:none}
+#pnf p{margin:0 0 18px;font-size:16px;line-height:1.4}
+#pnf .bt2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#pnf .bt2[hidden],#pnf .b[hidden]{display:none}
+#pnf .b{width:100%;font-size:17px;min-height:52px}
+#pnfNao{background:var(--field);color:var(--ink);border:1px solid var(--line)}
+.campo input.fora{border-color:var(--err);color:var(--err)}
 #inst .cx{background:var(--card);color:var(--ink);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 #inst img{width:84px;height:84px;border-radius:18px;border:1px solid var(--line);background:#fff}
 #inst h2{font-size:20px;margin:12px 0 6px}
@@ -178,6 +190,15 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
     <ol id="instIOS" hidden><li>Toque no botão <b>Compartilhar</b> do Safari.</li><li>Escolha <b>Adicionar à Tela de Início</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol>
     <button class="b zap" id="bInst" type="button">Clique aqui para instalar</button>
     <div><button class="lk" id="bInstNao" type="button">Agora não</button></div>
+  </div>
+</div>
+<div id="pnf" hidden role="alertdialog" aria-modal="true" aria-labelledby="pnfT" aria-describedby="pnfP">
+  <div class="cx">
+    <h2 id="pnfT">Preço NF alterado</h2>
+    <p class="nm" id="pnfN"></p>
+    <p id="pnfP"></p>
+    <div class="bt2"><button class="b" id="pnfNao" type="button">Não</button><button class="b zap" id="pnfSim" type="button">Sim</button></div>
+    <button class="b zap" id="pnfOk" type="button" hidden>Entendi</button>
   </div>
 </div>
 <div id="login" hidden>
@@ -327,6 +348,30 @@ function simFrac(cod, base){
 //   verba gerada = tab*g + (base - tab): acima da tabela gera verba extra; abaixo, consome verba.
 //   desconto simulado aplica sobre a base; Desconto Geral = soma dos descontos.
 var pn = {};             // codigo -> preco alterado (R$/fardo)
+var autNF = {};          // codigo -> o representante confirmou que tem autorizacao para mudar o preco NF
+var LIM_NF = 0.05;       // o preco NF pode variar no maximo 5% (promocao: so para menos)
+function limitesNF(preco, promo){
+  var ref = promo>0 ? promo : preco;
+  return {ref:ref, min:Math.ceil(ref*(1-LIM_NF)*100-1e-6)/100, max: promo>0 ? ref : Math.floor(ref*(1+LIM_NF)*100+1e-6)/100};
+}
+function perguntaNF(cod, nome, aoNao){
+  var d = $("pnf");
+  $("pnfT").textContent = "Preço NF alterado";
+  $("pnfP").textContent = "Você está alterando o preço unitário do produto na NF, você tem autorização para isso?";
+  $("pnfN").textContent = nome; $("pnfN").hidden = !nome;
+  $("pnfSim").hidden = false; $("pnfNao").hidden = false; $("pnfOk").hidden = true;
+  d.hidden = false; try{ $("pnfNao").focus(); }catch(e){}
+  $("pnfSim").onclick = function(){
+    autNF[cod] = true;
+    $("pnfT").textContent = "Atenção";
+    $("pnfP").textContent = "Esse pedido cairá bloqueado no sistema, alinhe com o seu gerente a liberação.";
+    $("pnfSim").hidden = true; $("pnfNao").hidden = true; $("pnfOk").hidden = false;
+    try{ $("pnfOk").focus(); }catch(e){}
+    salvaRascunho();
+  };
+  $("pnfNao").onclick = function(){ d.hidden = true; delete autNF[cod]; aoNao(); };
+  $("pnfOk").onclick = function(){ d.hidden = true; };
+}
 function precoBase(cod, preco, promo){ var tab = promo>0 ? promo : preco, v = pn[cod]; return (v>0) ? v : tab; }
 function calc(cod, preco, promo, q){
   var p = D.produtos[cod]; var tab = promo>0 ? promo : preco, base = precoBase(cod, preco, promo);
@@ -390,7 +435,7 @@ function montaLista(){
     pr.appendChild(document.createTextNode(" /fardo Nota Fiscal"));
     info.appendChild(pr);
     var c0 = calc(cod,it[1],it[2],1);
-    var linha = "Gera verba de "+pct(p.v)+": "+money(c0.Jg)+"/fardo"+(c0.Kg!==null ? " ("+money(c0.Kg)+" por pacote)" : "");
+    var linha = "Este produto gera, por padrão, verba de "+pct(p.v)+". Se aplicada: "+money(c0.Jg)+"/fardo"+(c0.Kg!==null ? " ("+money(c0.Kg)+" por pacote)" : "");
     info.appendChild(el("div","meta",linha));
     var chips = el("div","chips"); info.appendChild(chips);
     var gv = el("span","chip gv"); chips.appendChild(gv);
@@ -399,7 +444,7 @@ function montaLista(){
     var campos = el("div","campos"); painel.appendChild(campos);
     // campo "preco NF": o representante pode alterar o preco do fardo (promocao: so para menos)
     var pr2 = el("div","campo");
-    pr2.appendChild(el("span","rot", it[2]>0 ? "Preço NF (até a promoção)" : "Preço NF (R$/fardo)"));
+    pr2.appendChild(el("span","rot", "Preço NF (R$/fardo)"));
     var pLin = el("div","linha"); pr2.appendChild(pLin);
     var pi = el("input"); pi.type="text"; pi.setAttribute("inputmode","decimal"); pi.setAttribute("aria-label","Preço por fardo de "+p.d);
     pi.placeholder = (it[2]>0 ? it[2] : it[1]).toFixed(2).replace(".",",");
@@ -408,13 +453,13 @@ function montaLista(){
     campos.appendChild(pr2);
     // campo "desconto desejado": o representante escolhe % ou R$ (preco por fardo)
     var sr = el("div","campo");
-    sr.appendChild(el("span","rot","Desconto desejado"));
+    sr.appendChild(el("span","rot","Desconto ou Preço Desejado"));
     var sLin = el("div","linha"); sr.appendChild(sLin);
     var seg = el("div","seg");
     var bP = el("button",null,"%"); bP.type="button"; bP.setAttribute("aria-label","Informar em percentual");
     var bR = el("button",null,"R$"); bR.type="button"; bR.setAttribute("aria-label","Informar o preço por fardo em reais");
     seg.appendChild(bP); seg.appendChild(bR); sLin.appendChild(seg);
-    var si = el("input"); si.type="text"; si.setAttribute("inputmode","decimal"); si.setAttribute("aria-label","Desconto desejado de "+p.d);
+    var si = el("input"); si.type="text"; si.setAttribute("inputmode","decimal"); si.setAttribute("aria-label","Desconto ou preço desejado de "+p.d);
     sLin.appendChild(si); campos.appendChild(sr);
     var pl = el("div","nota"); painel.appendChild(pl);
     var avI = el("div","avitem"); painel.appendChild(avI);
@@ -428,14 +473,19 @@ function montaLista(){
     rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, pi:pi, pl:pl, bPv:bPv, modo:(sim[cod] ? sim[cod].m : "p")};
     function leNum(txt){ var v = parseFloat(String(txt).replace(/\./g,"").replace(",",".")); return isNaN(v) ? null : v; }
     function fmtNum(v, casas){ return v.toFixed(casas).replace(".",","); }
-    function aplicaPreco(){
-      var v = leNum(pi.value), tab = it[2]>0 ? it[2] : it[1];
+    function aplicaPreco(final){
+      var v = leNum(pi.value), L = limitesNF(it[1], it[2]), tab = L.ref;
+      pi.classList.remove("fora");
       if(v===null || pi.value.trim()==="" || v<=0){ delete pn[cod]; }
       else {
-        if(it[2]>0 && v > it[2]){ v = it[2]; pi.value = fmtNum(v,2); msg("Produto em promoção: o preço só pode ser menor que a promoção.","err"); }
-        if(!(it[2]>0) && v > tab*2){ v = Math.round(tab*200)/100; pi.value = fmtNum(v,2); msg("Preço limitado ao dobro da tabela. Confira o valor digitado.","err"); }
+        if(v > L.max + 1e-9){ v = L.max; pi.value = fmtNum(v,2); msg(it[2]>0 ? "Produto em promoção: o Preço NF pode ser no máximo a promoção ("+money(L.max)+")." : "O Preço NF pode subir no máximo 5%: até "+money(L.max)+".","err"); }
+        if(v < L.min - 1e-9){
+          if(!final){ pi.classList.add("fora"); return; }   // ainda digitando: espera terminar
+          v = L.min; pi.value = fmtNum(v,2); msg("O Preço NF pode baixar no máximo 5%: até "+money(L.min)+".","err");
+        }
         if(Math.abs(v-tab) < 0.005) delete pn[cod]; else pn[cod] = v;
       }
+      if(final && !pn[cod]) delete autNF[cod];
       var s = sim[cod], b = precoBase(cod, it[1], it[2]);
       if(s && s.m==="r" && s.v > b){ s.v = b; si.value = fmtNum(b,2); }   // desconto em R$ nunca acima do novo preco
       atualizaLinha(cod); pintaTotais(); salvaRascunho();
@@ -446,7 +496,16 @@ function montaLista(){
       d = d.slice(0,9); if(pi.value!==d) pi.value = d; aplicaPreco();
     });
     pi.addEventListener("focus", function(){ try{ pi.select(); }catch(e){} });
-    bPv.addEventListener("click", function(){ pi.value = ""; aplicaPreco(); });
+    pi.addEventListener("change", function(){
+      aplicaPreco(true);
+      if(pn[cod] && !autNF[cod]) perguntaNF(cod, p.d, function(){ pi.value = ""; aplicaPreco(true); });
+    });
+    bPv.addEventListener("click", function(){ pi.value = ""; aplicaPreco(true); });
+    if(pn[cod]){   // rascunho antigo: respeita o limite de 5%
+      var L0 = limitesNF(it[1], it[2]);
+      pn[cod] = Math.min(L0.max, Math.max(L0.min, pn[cod]));
+      if(Math.abs(pn[cod]-L0.ref) < 0.005) delete pn[cod];
+    }
     if(pn[cod]) pi.value = fmtNum(pn[cod],2);
     function aplicaSim(){
       var r = rows[cod], v = leNum(si.value), base = precoBase(cod, it[1], it[2]);
@@ -477,7 +536,7 @@ function montaLista(){
     });
     si.addEventListener("focus", function(){ try{ si.select(); }catch(e){} });
     if(sim[cod]) si.value = sim[cod].m==="r" ? fmtNum(sim[cod].v,2) : String(sim[cod].v).replace(".",",");
-    function set(v){ v = Math.max(0, Math.min(99999, parseInt(v,10)||0)); if(v>0) qty[cod]=v; else { delete qty[cod]; delete sim[cod]; si.value=""; delete pn[cod]; pi.value=""; } atualizaLinha(cod); pintaTotais(); salvaRascunho(); }
+    function set(v){ v = Math.max(0, Math.min(99999, parseInt(v,10)||0)); if(v>0) qty[cod]=v; else { delete qty[cod]; delete sim[cod]; si.value=""; delete pn[cod]; delete autNF[cod]; pi.value=""; } atualizaLinha(cod); pintaTotais(); salvaRascunho(); }
     bm.addEventListener("click", function(){ set((qty[cod]||0)-1); });
     bp.addEventListener("click", function(){ set((qty[cod]||0)+1); });
     inp.addEventListener("input", function(){ var d = inp.value.replace(/\D/g,"").slice(0,5); if(inp.value!==d) inp.value=d; set(d); });
@@ -527,6 +586,7 @@ function trocaTabela(id, avisar){
     Object.keys(qty).forEach(function(c){ if(!ok[c]){ delete qty[c]; perdidos++; } });
     Object.keys(sim).forEach(function(c){ if(!ok[c] || !qty[c]) delete sim[c]; });
     Object.keys(pn).forEach(function(c){ if(!ok[c] || !qty[c]) delete pn[c]; });
+    Object.keys(autNF).forEach(function(c){ if(!pn[c]) delete autNF[c]; });
   }
   tabAtual = nova;
   montaLista(); pintaTotais(); salvaRascunho();
@@ -808,10 +868,17 @@ function valida(){
   else if(!$("cli").value.trim()) erro = "Informe o nome do cliente.";
   else if(!tabAtual) erro = "Escolha a tabela de preço.";
   else if(t.itens.length===0) erro = "Coloque o volume de pelo menos um produto.";
+  else if(semAut()) erro = "AUT";
   else if(t.estourou) erro = "Pedido bloqueado: você está usando "+money(-t.saldo)+" a mais do que a verba gerada. Aumente a verba gerada ou reduza o desconto em algum produto.";
+  if(erro==="AUT"){
+    var c = semAut(), r = rows[c];
+    perguntaNF(c, D.produtos[c] ? D.produtos[c].d : "", function(){ if(r){ r.pi.value = ""; r.pi.dispatchEvent(new Event("change")); } });
+    return null;
+  }
   if(erro){ msg(erro,"err"); return null; }
   return t;
 }
+function semAut(){ var k = Object.keys(pn).filter(function(c){ return pn[c] && qty[c] && !autNF[c]; }); return k.length ? k[0] : ""; }
 
 /* ---------- salvar / enviar ---------- */
 function historico(){ return lsJson(K.h, []); }
@@ -885,7 +952,7 @@ function pintaHist(){
 /* ---------- rascunho (nao perde o pedido ao fechar o app) ---------- */
 function salvaRascunho(){
   lsSet(K.d, JSON.stringify({ver:CFG.versao, rep:$("rep").value, modo:modoCli, cod:$("cod").value, cli:$("cli").value, grupo:$("grupo").value,
-    prazo:$("prazo").value, tab:$("tab").value, qty:qty, sim:sim, pn:pn}));
+    prazo:$("prazo").value, tab:$("tab").value, qty:qty, sim:sim, pn:pn, autNF:autNF}));
 }
 function carregaRascunho(d){
   if(!d) return;
@@ -897,11 +964,11 @@ function carregaRascunho(d){
   if(modoCli==="cad") $("hCli").textContent = "Cliente cadastrado: dados preenchidos pelo cadastro.";
   if(modoCli==="novo") $("hCli").textContent = "Cliente novo: preencha os dados abaixo.";
   $("tab").value = d.tab || tabelaPadrao();
-  qty = d.qty||{}; sim = d.sim||{}; pn = d.pn||{};
+  qty = d.qty||{}; sim = d.sim||{}; pn = d.pn||{}; autNF = d.autNF||{};
   trocaTabela($("tab").value,false);
 }
 function novoPedido(){
-  qty = {}; sim = {}; pn = {}; modoCli = ""; ["cod","cli","grupo","prazo","busca","filtro"].forEach(function(i){ $(i).value=""; });
+  qty = {}; sim = {}; pn = {}; autNF = {}; modoCli = ""; ["cod","cli","grupo","prazo","busca","filtro"].forEach(function(i){ $(i).value=""; });
   travaCampos(true); $("hCli").textContent = 'Escolha o cliente na lista. Se ele não for cadastrado, escreva apenas a palavra "Novo".';
   $("tab").value = tabelaPadrao(); $("avTab").hidden = true; trocaTabela($("tab").value,false); salvaRascunho();
   pintaRecuperar(); window.scrollTo(0,0); msg("Novo pedido iniciado.","ok");
