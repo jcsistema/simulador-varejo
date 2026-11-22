@@ -27,11 +27,13 @@
   --pri:#0f4c81; --pri-ink:#fff; --zap:#128c4a; --zap-ink:#fff;
   --warn:#9a5b00; --warn-bg:#fff4dc; --err:#b3261e; --err-bg:#fde8e6; --ok:#17663a;
   --field:#eef1f5;
+  --on-bg:#f6f9fd; --on-line:#c9d8ea; --ok-bg:#e3f4ea; --pri-bg:#e4eef8;
 }
 @media (prefers-color-scheme:dark){
   :root{--bg:#10151b; --card:#19212a; --ink:#e8edf2; --mut:#9aa8b6; --line:#2b3642;
   --pri:#5fa8ee; --pri-ink:#0a1622; --zap:#2bb673; --zap-ink:#04170d;
-  --warn:#f0b955; --warn-bg:#33270d; --err:#ff8a80; --err-bg:#3a1714; --ok:#6fd49a; --field:#222d38;}
+  --warn:#f0b955; --warn-bg:#33270d; --err:#ff8a80; --err-bg:#3a1714; --ok:#6fd49a; --field:#222d38;
+  --on-bg:#1d2732; --on-line:#33475c; --ok-bg:#16301f; --pri-bg:#172b40;}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -61,13 +63,35 @@ input:focus,select:focus,button:focus-visible{outline:3px solid var(--pri);outli
 .fam{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--mut);text-transform:uppercase;margin:16px 2px 6px}
 .item{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
 .item:first-of-type{border-top:0}
-.item.on{background:linear-gradient(90deg,rgba(15,76,129,.07),transparent);margin:0 -14px;padding:12px 14px}
+.item.on{background:var(--on-bg);border:1px solid var(--on-line);border-radius:14px;margin:8px -8px;padding:12px}
+.item.on + .item{border-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.item > *{min-width:0}
+.chip{max-width:100%}
+.campo,.campo .linha{min-width:0}
+.chips:empty,.chip:empty{display:none}
+.chip{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;line-height:1.35}
+.chip.gv{background:var(--ok-bg);color:var(--ok)}
+.chip.sm{background:var(--pri-bg);color:var(--pri)}
+.painel{display:none;grid-column:1/-1;border-top:1px dashed var(--on-line);padding-top:10px;margin-top:2px}
+.item.on .painel{display:block}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px}
+.campo .rot{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.02em}
+.campo .linha{display:flex;gap:6px;align-items:stretch}
+.campo input{flex:1;min-width:0;width:auto;min-height:44px;text-align:center;font-size:16px;font-weight:700;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:4px}
+.campo .volta{min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--pri);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.campo .volta[hidden]{display:none}
+.campo .seg{flex:none}
+.nota{font-size:13px;font-weight:600;color:var(--warn);margin-top:8px}
+.nota:empty,.avitem:empty{display:none}
+.sub{display:flex;justify-content:flex-end;align-items:baseline;gap:10px;margin-top:10px;font-size:13px;color:var(--mut);font-weight:600}
+.sub:empty{display:none}
+.sub b{font-size:17px;color:var(--ink)}
 .nome{font-weight:600;font-size:15px}
 .meta{font-size:13px;color:var(--mut)}
 .preco{font-size:14px}
 .preco s{color:var(--mut)}
 .tag{display:inline-block;font-size:12px;font-weight:700;background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:1px 7px;margin-left:6px}
-.sub{font-size:13px;color:var(--ok);font-weight:600;min-height:18px}
 .qty{display:flex;align-items:center;gap:6px}
 .simr{display:none;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:2px}
 .item.on .simr{display:flex}
@@ -113,7 +137,9 @@ a.b{display:flex;align-items:center;justify-content:center;text-decoration:none;
 .hist .b{min-height:40px;font-size:14px}
 details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
 .vazio{color:var(--mut);padding:14px 0;text-align:center}
-@media (max-width:520px){.item{grid-template-columns:1fr}.qty{justify-content:flex-end}}
+@media (max-width:520px){.item{grid-template-columns:1fr}.qty{justify-content:flex-end}
+  .qty::before{content:"Fardos";margin-right:auto;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.02em}
+  .campos{grid-template-columns:1fr}.campo{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px}.campo .rot{margin:0}}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 #login{max-width:420px;margin:0 auto;padding:28px 16px}
 #login .card{padding:18px}
@@ -366,35 +392,40 @@ function montaLista(){
     var c0 = calc(cod,it[1],it[2],1);
     var linha = "Gera verba de "+pct(p.v)+": "+money(c0.Jg)+"/fardo"+(c0.Kg!==null ? " ("+money(c0.Kg)+" por pacote)" : "");
     info.appendChild(el("div","meta",linha));
-    var simL = el("div","siml"); info.appendChild(simL);
-    var avI = el("div","avitem"); info.appendChild(avI);
-    var gv = el("div","siml"); info.appendChild(gv);
-    var sub = el("div","sub"); info.appendChild(sub);
+    var chips = el("div","chips"); info.appendChild(chips);
+    var gv = el("span","chip gv"); chips.appendChild(gv);
+    var simL = el("span","chip sm"); chips.appendChild(simL);
+    var painel = el("div","painel");
+    var campos = el("div","campos"); painel.appendChild(campos);
     // campo "preco NF": o representante pode alterar o preco do fardo (promocao: so para menos)
-    var pr2 = el("div","simr");
-    pr2.appendChild(el("span","rot", it[2]>0 ? "Preço NF (até a promoção)" : "Preço NF"));
+    var pr2 = el("div","campo");
+    pr2.appendChild(el("span","rot", it[2]>0 ? "Preço NF (até a promoção)" : "Preço NF (R$/fardo)"));
+    var pLin = el("div","linha"); pr2.appendChild(pLin);
     var pi = el("input"); pi.type="text"; pi.setAttribute("inputmode","decimal"); pi.setAttribute("aria-label","Preço por fardo de "+p.d);
     pi.placeholder = (it[2]>0 ? it[2] : it[1]).toFixed(2).replace(".",",");
-    pr2.appendChild(pi);
-    var bPv = el("button","volta","Voltar"); bPv.type="button"; bPv.setAttribute("aria-label","Voltar ao preço de tabela de "+p.d); pr2.appendChild(bPv);
-    info.appendChild(pr2);
-    var pl = el("div","siml"); info.appendChild(pl);
+    pLin.appendChild(pi);
+    var bPv = el("button","volta","↺ Tabela"); bPv.type="button"; bPv.setAttribute("aria-label","Voltar ao preço de tabela de "+p.d); pLin.appendChild(bPv);
+    campos.appendChild(pr2);
     // campo "desconto desejado": o representante escolhe % ou R$ (preco por fardo)
-    var sr = el("div","simr");
+    var sr = el("div","campo");
     sr.appendChild(el("span","rot","Desconto desejado"));
+    var sLin = el("div","linha"); sr.appendChild(sLin);
     var seg = el("div","seg");
     var bP = el("button",null,"%"); bP.type="button"; bP.setAttribute("aria-label","Informar em percentual");
     var bR = el("button",null,"R$"); bR.type="button"; bR.setAttribute("aria-label","Informar o preço por fardo em reais");
-    seg.appendChild(bP); seg.appendChild(bR); sr.appendChild(seg);
+    seg.appendChild(bP); seg.appendChild(bR); sLin.appendChild(seg);
     var si = el("input"); si.type="text"; si.setAttribute("inputmode","decimal"); si.setAttribute("aria-label","Desconto desejado de "+p.d);
-    sr.appendChild(si); info.appendChild(sr);
+    sLin.appendChild(si); campos.appendChild(sr);
+    var pl = el("div","nota"); painel.appendChild(pl);
+    var avI = el("div","avitem"); painel.appendChild(avI);
+    var sub = el("div","sub"); painel.appendChild(sub);
     var q = el("div","qty");
     var bm = el("button",null,"−"); bm.type="button"; bm.setAttribute("aria-label","Diminuir "+p.d);
     var inp = el("input"); inp.type="text"; inp.setAttribute("inputmode","numeric"); inp.setAttribute("aria-label","Volume de "+p.d); inp.placeholder="0";
     var bp = el("button",null,"+"); bp.type="button"; bp.setAttribute("aria-label","Aumentar "+p.d);
     q.appendChild(bm); q.appendChild(inp); q.appendChild(bp);
-    w.appendChild(info); w.appendChild(q); box.appendChild(w);
-    rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, pi:pi, pl:pl, modo:(sim[cod] ? sim[cod].m : "p")};
+    w.appendChild(info); w.appendChild(q); w.appendChild(painel); box.appendChild(w);
+    rows[cod] = {w:w, inp:inp, sub:sub, gv:gv, it:it, simL:simL, avI:avI, si:si, bP:bP, bR:bR, pi:pi, pl:pl, bPv:bPv, modo:(sim[cod] ? sim[cod].m : "p")};
     function leNum(txt){ var v = parseFloat(String(txt).replace(/\./g,"").replace(",",".")); return isNaN(v) ? null : v; }
     function fmtNum(v, casas){ return v.toFixed(casas).replace(".",","); }
     function aplicaPreco(){
@@ -468,7 +499,9 @@ function atualizaLinha(cod){
   r.pl.textContent = (q>0 && c1.alt) ? "Preço alterado: "+money(c1.base)+"/fardo (tabela "+money(c1.tab)+"). "+(c1.ex>0 ? "Gera "+money(c1.ex*q)+" a mais de verba." : "Consome "+money(-c1.ex*q)+" de verba.") : "";
   r.simL.textContent = (q>0 && sim[cod]) ? "Simulação com verba de "+pct(c1.s)+": "+money(c1.J)+"/fardo"+(c1.K!==null ? " ("+money(c1.K)+" por pacote)" : "") : "";
   r.gv.textContent = q>0 ? "Verba gerada: "+(c1.alt ? "" : pct(c1.g)+" · ")+money(calc(cod,r.it[1],r.it[2],q).gera) : "";
-  r.sub.textContent = q>0 ? q+" × "+money(c1.J)+" = "+money(calc(cod,r.it[1],r.it[2],q).com) : "";
+  r.bPv.hidden = !c1.alt;
+  r.sub.textContent = "";
+  if(q>0){ r.sub.appendChild(el("span","rot",q+" × "+money(c1.J))); r.sub.appendChild(el("b",null,money(calc(cod,r.it[1],r.it[2],q).com))); }
 }
 function aplicaFiltro(){
   var f = norm($("filtro").value.trim());
