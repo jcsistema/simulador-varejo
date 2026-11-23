@@ -71,9 +71,10 @@ input:focus,select:focus,button:focus-visible{outline:3px solid var(--pri);outli
 .campo,.campo .linha{min-width:0}
 .chips:empty,.chip:empty{display:none}
 .chip{font-size:12.5px;font-weight:700;border-radius:999px;padding:3px 10px;line-height:1.35}
+.chip.al{background:var(--warn-bg);color:var(--warn)}
 .chip.gv{background:var(--ok-bg);color:var(--ok)}
 .chip.sm{background:var(--pri-bg);color:var(--pri)}
-.painel{display:none;grid-column:1/-1;border-top:1px dashed var(--on-line);padding-top:10px;margin-top:2px}
+.painel{display:none;grid-column:1/-1;border-top:1px solid var(--on-line);padding-top:12px;margin-top:4px}
 .item.on .painel{display:block}
 .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px}
 .campo .rot{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.02em}
@@ -86,7 +87,8 @@ input:focus,select:focus,button:focus-visible{outline:3px solid var(--pri);outli
 .campo input.pnfi{border-color:var(--pri)}
 .nota{font-size:13px;font-weight:600;color:var(--warn);margin-top:8px}
 .nota:empty,.avitem:empty{display:none}
-.sub{display:flex;justify-content:flex-end;align-items:baseline;gap:10px;margin-top:10px;font-size:13px;color:var(--mut);font-weight:600}
+.sub{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--on-line);font-size:13px;color:var(--mut);font-weight:600}
+.sub small{font-size:12px;font-weight:500}
 .sub:empty{display:none}
 .sub b{font-size:17px;color:var(--ink)}
 .nome{font-weight:600;font-size:15px}
@@ -110,8 +112,8 @@ input:focus,select:focus,button:focus-visible{outline:3px solid var(--pri);outli
 .avverba{background:var(--err-bg);color:var(--err);border:1px solid var(--err);border-radius:9px;padding:7px 10px;font-size:13px;font-weight:600;margin:0 0 8px;line-height:1.3}
 .avverba[hidden]{display:none}
 .avitem{font-size:13px;font-weight:600;color:var(--err);margin-top:2px}
-.qty button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:24px;line-height:1;cursor:pointer}
-.qty input{width:68px;min-height:46px;text-align:center;font-size:18px;font-weight:700;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:4px}
+.qty button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:24px;line-height:1;cursor:pointer}
+.qty input{width:68px;min-height:44px;text-align:center;font-size:18px;font-weight:700;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:4px}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
   padding:10px 16px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px rgba(0,0,0,.08);z-index:5}
 .bar .in{max-width:860px;margin:0 auto}
@@ -471,7 +473,7 @@ function montaLista(){
     seg.appendChild(bP); seg.appendChild(bR); sLin.appendChild(seg);
     var si = el("input"); si.type="text"; si.setAttribute("inputmode","decimal"); si.setAttribute("aria-label","Desconto ou preço desejado de "+p.d);
     sLin.appendChild(si); campos.appendChild(sr);
-    var pl = el("div","nota"); painel.appendChild(pl);
+    var pl = el("span","chip al"); chips.appendChild(pl);
     var avI = el("div","avitem"); painel.appendChild(avI);
     var sub = el("div","sub"); painel.appendChild(sub);
     var q = el("div","qty");
@@ -568,12 +570,12 @@ function atualizaLinha(cod){
   var c1 = calc(cod,r.it[1],r.it[2],1);
   r.bP.className = r.modo==="p" ? "at" : ""; r.bR.className = r.modo==="r" ? "at" : "";
   r.si.placeholder = r.modo==="p" ? "%" : "R$/fardo";
-  r.pl.textContent = (q>0 && c1.alt) ? "Preço alterado: "+money(c1.base)+"/fardo (tabela "+money(c1.tab)+"). "+(c1.ex>0 ? "Gera "+money(c1.ex*q)+" a mais de verba." : "Consome "+money(-c1.ex*q)+" de verba.") : "";
+  r.pl.textContent = (q>0 && c1.alt) ? "Preço NF alterado (tabela "+money(c1.tab)+") · "+(c1.ex>0 ? "gera "+money(c1.ex*q)+" a mais de verba" : "consome "+money(-c1.ex*q)+" de verba") : "";
   r.simL.textContent = (q>0 && sim[cod]) ? "Simulação com verba de "+pct(c1.s)+": "+money(c1.J)+"/fardo"+(c1.K!==null ? " ("+money(c1.K)+" por pacote)" : "") : "";
   r.gv.textContent = q>0 ? "Verba gerada: "+(c1.alt ? "" : pct(c1.g)+" · ")+money(calc(cod,r.it[1],r.it[2],q).gera) : "";
   r.bPv.hidden = !c1.alt;
   r.sub.textContent = "";
-  if(q>0){ r.sub.appendChild(el("span","rot",q+" × "+money(c1.J))); r.sub.appendChild(el("b",null,money(calc(cod,r.it[1],r.it[2],q).com))); }
+  if(q>0){ var sl = el("span","rot","Total do item "); sl.appendChild(el("small",null,"("+q+" × "+money(c1.J)+")")); r.sub.appendChild(sl); r.sub.appendChild(el("b",null,money(calc(cod,r.it[1],r.it[2],q).com))); }
 }
 function aplicaFiltro(){
   var f = norm($("filtro").value.trim());
