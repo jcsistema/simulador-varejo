@@ -510,6 +510,7 @@ function montaLista(){
     pi.addEventListener("focus", function(){ try{ pi.select(); }catch(e){} });
     pi.addEventListener("change", function(){
       aplicaPreco(true);
+      if(pn[cod]) pi.value = fmtNum(pn[cod],2);   // preco sempre com 2 casas: 90 -> 90,00
       if(pn[cod] && !autNF[cod]) perguntaNF(cod, p.d, function(){ pi.value = ""; aplicaPreco(true); });
     });
     bPv.addEventListener("click", function(){ pi.value = ""; aplicaPreco(true); });
@@ -545,6 +546,9 @@ function montaLista(){
       var d = si.value.replace(/[^0-9.,]/g,"").replace(/\./g,","), i = d.indexOf(",");
       if(i>=0) d = d.slice(0,i+1) + d.slice(i+1).replace(/,/g,"").slice(0,2);   // uma virgula so, ate 2 casas
       d = d.slice(0,9); if(si.value!==d) si.value = d; aplicaSim();
+    });
+    si.addEventListener("change", function(){
+      var r = rows[cod]; if(r && r.modo==="r" && sim[cod]) si.value = fmtNum(sim[cod].v,2);   // preco em R$ com 2 casas
     });
     si.addEventListener("focus", function(){
       try{ si.select(); }catch(e){}
