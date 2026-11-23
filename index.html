@@ -325,10 +325,10 @@ function simFrac(cod, base){
 var pn = {};             // codigo -> preco alterado (R$/fardo)
 var autNF = {};          // codigo -> o representante confirmou que tem autorizacao para mudar o preco NF
 var viuSim = {};         // codigo -> ja viu o aviso "so para simulacao" neste pedido
-var LIM_NF = 0.05;       // o preco NF pode variar no maximo 5% (promocao: so para menos)
+var LIM_NF = 0.05;       // o preco NF so pode baixar, no maximo 5% da tabela ou da promocao
 function limitesNF(preco, promo){
   var ref = promo>0 ? promo : preco;
-  return {ref:ref, min:Math.ceil(ref*(1-LIM_NF)*100-1e-6)/100, max: promo>0 ? ref : Math.floor(ref*(1+LIM_NF)*100+1e-6)/100};
+  return {ref:ref, min:Math.ceil(ref*(1-LIM_NF)*100-1e-6)/100, max:ref};
 }
 function caixa(titulo, nome, texto, simNao){
   $("pnfT").textContent = titulo; $("pnfN").textContent = nome||""; $("pnfN").hidden = !nome; $("pnfP").textContent = texto;
@@ -449,7 +449,7 @@ function montaLista(){
       pi.classList.remove("fora");
       if(v===null || pi.value.trim()==="" || v<=0){ delete pn[cod]; }
       else {
-        if(v > L.max + 1e-9){ v = L.max; pi.value = fmtNum(v,2); msg(it[2]>0 ? "Produto em promoção: o Preço NF pode ser no máximo a promoção ("+money(L.max)+")." : "O Preço NF pode subir no máximo 5%: até "+money(L.max)+".","err"); }
+        if(v > L.max + 1e-9){ v = L.max; pi.value = fmtNum(v,2); msg("O Preço NF não pode ser maior que o "+(it[2]>0 ? "da promoção" : "da tabela")+" ("+money(L.max)+"). Só é permitido baixar até 5%.","err"); }
         if(v < L.min - 1e-9){
           if(!final){ pi.classList.add("fora"); return; }   // ainda digitando: espera terminar
           v = L.min; pi.value = fmtNum(v,2); msg("O Preço NF pode baixar no máximo 5%: até "+money(L.min)+".","err");
