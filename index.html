@@ -141,7 +141,14 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
 .vazio{color:var(--mut);padding:14px 0;text-align:center}
 @media (max-width:520px){.item{grid-template-columns:1fr}.qty{justify-content:flex-end}
   .qty::before{content:"Fardos";margin-right:auto;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.02em}
-  .campos{grid-template-columns:1fr}.campo{display:grid;grid-template-columns:108px 1fr;align-items:center;gap:8px}.campo .rot{margin:0}}
+  .campos{grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+  .campo .rot{font-size:11px;line-height:1.25;margin-bottom:5px}
+  .campo input{min-width:0;font-size:17px}
+  .campo .volta{padding:0 12px;font-size:17px}.campo .volta .tx{display:none}
+  .campo .seg button{min-width:40px;font-size:14px}
+  .item.on{margin:8px -6px;padding:12px 10px}
+  .meta{font-size:12.5px}}
+@media (max-width:340px){.campos{grid-template-columns:1fr}}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 #login{max-width:420px;margin:0 auto;padding:28px 16px}
 #login .card{padding:18px}
@@ -452,7 +459,7 @@ function montaLista(){
     var pi = el("input","pnfi"); pi.type="text"; pi.setAttribute("inputmode","decimal"); pi.setAttribute("aria-label","Preço por fardo de "+p.d);
     pi.placeholder = (it[2]>0 ? it[2] : it[1]).toFixed(2).replace(".",",");
     pLin.appendChild(pi);
-    var bPv = el("button","volta","↺ Tabela"); bPv.type="button"; bPv.setAttribute("aria-label","Voltar ao preço de tabela de "+p.d); pLin.appendChild(bPv);
+    var bPv = el("button","volta","↺"); bPv.appendChild(el("span","tx"," Tabela")); bPv.type="button"; bPv.setAttribute("aria-label","Voltar ao preço de tabela de "+p.d); pLin.appendChild(bPv);
     campos.appendChild(pr2);
     // campo "desconto desejado": o representante escolhe % ou R$ (preco por fardo)
     var sr = el("div","campo");
