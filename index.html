@@ -160,6 +160,10 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
 .sair{background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
 #inst{position:fixed;inset:0;z-index:20;background:rgba(10,20,30,.62);display:flex;align-items:center;justify-content:center;padding:20px}
 #inst[hidden]{display:none}
+#filtro::placeholder{font-size:13px}
+@media (max-width:420px){#filtro::placeholder{font-size:11.5px}}
+@media (max-width:380px){#filtro::placeholder{font-size:10.5px}}
+@media (max-width:340px){#filtro::placeholder{font-size:9px}}
 #pnf{position:fixed;inset:0;z-index:30;background:rgba(10,20,30,.62);display:flex;align-items:center;justify-content:center;padding:20px}
 #pnf[hidden]{display:none}
 #pnf .cx{background:var(--card);color:var(--ink);border-radius:16px;padding:22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);border-top:5px solid var(--warn)}
@@ -250,7 +254,7 @@ details summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
   <section class="card" aria-labelledby="h-itens">
     <h2 id="h-itens">Produtos</h2>
     <label for="filtro" class="sr" style="position:absolute;left:-9999px">Filtrar produtos</label>
-    <input type="search" id="filtro" placeholder="Filtrar produto por nome ou código" autocomplete="off">
+    <input type="search" id="filtro" placeholder="Filtra por código, por nome ou partes da descrição" autocomplete="off">
     <div id="lista"></div>
   </section>
 
@@ -588,7 +592,8 @@ function aplicaFiltro(){
   Array.prototype.forEach.call($("lista").children, function(n){
     if(n.className==="fam"){ ultimaFam = n; n.style.display = "none"; return; }
     if(n.className.indexOf("item")===0){
-      var ok = !f || n.getAttribute("data-busca").indexOf(f)>=0;
+      var b = n.getAttribute("data-busca");   // cada palavra digitada precisa aparecer (em qualquer ordem)
+      var ok = !f || f.split(/\s+/).every(function(t){ return b.indexOf(t)>=0; });
       n.style.display = ok ? "" : "none";
       if(ok && ultimaFam) ultimaFam.style.display = "";
     }
